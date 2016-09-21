@@ -1,0 +1,17 @@
+{
+    "name": "neat-database",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Dominik Kienzler <d.kienzler@dominik-kienzler.de>",
+    "license": "ISC",
+    "peerDependencies": {
+        "mongoose": "^4.6.1",
+        "ape-status": "^1.1.2",
+        "bluebird": "^3.4.6",
+        "neat-base": "~1.x.x"
+    }
+}
