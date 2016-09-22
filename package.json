@@ -6,12 +6,16 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Nexum/neat-database.git"
+    },
     "author": "Dominik Kienzler <d.kienzler@dominik-kienzler.de>",
     "license": "ISC",
     "peerDependencies": {
         "mongoose": "^4.6.1",
         "ape-status": "^1.1.2",
         "bluebird": "^3.4.6",
-        "neat-base": "~1.x.x"
+        "neat-base": "^1.x.x"
     }
 }
