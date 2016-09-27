@@ -6,6 +6,7 @@ var mongoose = require("mongoose");
 var Application = require("neat-base").Application;
 var Promise = require("bluebird");
 var apeStatus = require("ape-status");
+var fs = require("fs");
 
 mongoose.Promise = Promise;
 
@@ -17,7 +18,8 @@ module.exports = class Database extends Module {
                 default: {
                     uri: "mongodb://127.0.0.1:27017/neat"
                 }
-            }
+            },
+            modelRoot: "models"
         }
     }
 
@@ -25,7 +27,9 @@ module.exports = class Database extends Module {
         return new Promise((resolve, reject) => {
             this.log.debug("Initializing...");
             this.connections = {};
-            resolve(this);
+            this.loadModels().then(() => {
+                return resolve(this);
+            });
         });
     }
 
@@ -130,4 +134,26 @@ module.exports = class Database extends Module {
         }
     }
 
-}
+    loadModels() {
+        return new Promise((resolve, reject) => {
+            var rootDir = Application.config.root_path + "/" + this.config.modelRoot;
+
+            return new Promise((resolve, reject) => {
+                fs.readdir(rootDir, (err, data) => {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    return resolve(data);
+                });
+            }).then((files) => {
+                return Promise.map(files, (file) => {
+                    var modelName = file.replace(".js", "");
+                    this.registerModel(modelName, require(rootDir + "/" + file));
+                    return Promise.resolve();
+                })
+            }, reject).then(resolve, reject);
+        });
+    }
+
+};
