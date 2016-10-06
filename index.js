@@ -138,6 +138,10 @@ module.exports = class Database extends Module {
         return new Promise((resolve, reject) => {
             var rootDir = Application.config.root_path + "/" + this.config.modelRoot;
 
+            if (!fs.existsSync(rootDir)) {
+                fs.mkdirSync(rootDir);
+            }
+
             return new Promise((resolve, reject) => {
                 fs.readdir(rootDir, (err, data) => {
                     if (err) {
