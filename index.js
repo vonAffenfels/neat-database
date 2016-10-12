@@ -47,9 +47,8 @@ module.exports = class Database extends Module {
                             auth: {
                                 authSource: config.authSource || "admin"
                             },
-                            poolSize: config.poolSize,
-                            rs_name: config.rs_name,
                             server: {
+                                poolSize: config.poolSize,
                                 reconnectTries: 60 * 60 * 24,
                                 reconnectInterval: 5000,
                                 socketOptions: {
@@ -58,6 +57,7 @@ module.exports = class Database extends Module {
                                 }
                             },
                             replset: {
+                                rs_name: config.rs_name,
                                 socketOptions: {
                                     keepAlive: 1,
                                     connectTimeoutMS: 30000
@@ -67,20 +67,20 @@ module.exports = class Database extends Module {
                     }
 
                     if (key === "default") {
-                        mongoose.connect(config.uri, options, (err) => {
-                            if (err) {
-                                this.log.error(err);
-                                return reject(err);
-                            }
-
-                            this.log.info("Connected to " + key);
-                            apeStatus.mongoose(this.connections[key], "apeStatus");
-                            resolve();
-                        });
 
                         this.connections[key] = mongoose.connection;
                         this.connections[key].on('error', (err) => {
                             this.log.error(err);
+                        });
+
+                        mongoose.connect(config.uri, options).then(() => {
+                            this.log.info("Connected to " + key);
+                            apeStatus.mongoose(this.connections[key], "apeStatus");
+                            resolve();
+                        }, (err) => {
+                            // err is a Replset it doesn't make any sense
+                            this.log.error(err);
+                            return reject(new Error("Error while connecting to default db"));
                         });
                     } else {
                         this.connections[key] = mongoose.createConnection(config.uri, options, (err) => {
