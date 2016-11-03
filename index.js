@@ -47,9 +47,8 @@ module.exports = class Database extends Module {
                             auth: {
                                 authSource: config.authSource || "admin"
                             },
-                            poolSize: config.poolSize,
-                            rs_name: config.rs_name,
                             server: {
+                                poolSize: config.poolSize,
                                 reconnectTries: 60 * 60 * 24,
                                 reconnectInterval: 5000,
                                 socketOptions: {
@@ -58,6 +57,7 @@ module.exports = class Database extends Module {
                                 }
                             },
                             replset: {
+                                rs_name: config.rs_name,
                                 socketOptions: {
                                     keepAlive: 1,
                                     connectTimeoutMS: 30000
@@ -67,20 +67,20 @@ module.exports = class Database extends Module {
                     }
 
                     if (key === "default") {
-                        mongoose.connect(config.uri, options, (err) => {
-                            if (err) {
-                                this.log.error(err);
-                                return reject(err);
-                            }
-
-                            this.log.info("Connected to " + key);
-                            apeStatus.mongoose(this.connections[key], "apeStatus");
-                            resolve();
-                        });
 
                         this.connections[key] = mongoose.connection;
                         this.connections[key].on('error', (err) => {
                             this.log.error(err);
+                        });
+
+                        mongoose.connect(config.uri, options).then(() => {
+                            this.log.info("Connected to " + key);
+                            apeStatus.mongoose(this.connections[key], "apeStatus");
+                            resolve();
+                        }, (err) => {
+                            // err is a Replset it doesn't make any sense
+                            this.log.error(err);
+                            return reject(new Error("Error while connecting to default db"));
                         });
                     } else {
                         this.connections[key] = mongoose.createConnection(config.uri, options, (err) => {
@@ -157,6 +157,107 @@ module.exports = class Database extends Module {
                     return Promise.resolve();
                 })
             }, reject).then(resolve, reject);
+        });
+    }
+
+
+    modifySchema(modelName, schema) {
+        schema.add({
+            _createdAt: {
+                type: Date,
+                default: function () {
+                    return new Date();
+                }
+            },
+            _createdBy: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "user",
+                default: null
+            },
+
+            _updatedAt: {
+                type: Date,
+                default: function () {
+                    return new Date();
+                }
+            },
+            _updatedBy: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "user",
+                default: null
+            },
+
+            _versions: {
+                type: Array,
+                default: []
+            },
+
+            _version: {
+                type: Number,
+                default: null
+            }
+        });
+
+        if (schema.options.toJSON.transform && typeof schema.options.toJSON.transform === "function") {
+            schema.options.toJSON._transform = schema.options.toJSON.transform;
+        }
+
+        schema.options.toJSON.transform = function (doc) {
+            if (schema.options.toJSON._transform) {
+                var obj = schema.options.toJSON._transform(doc);
+            } else {
+                obj = doc.toJSON({
+                    transform: false
+                });
+            }
+
+            delete obj._versions;
+
+            // ok this is weird, but mongoose doesnt call transforms on sub documents ... unfortunate when it comes to stuff like user passwords and the _versions key
+            // SOOOOO let's do it ourselfes i guess :(
+            for (var path in schema.paths) {
+                var pathObj = schema.paths[path];
+
+                if (pathObj.options.ref) {
+                    var val = doc.get(path);
+                    if (val && val instanceof mongoose.Model) {
+                        obj[path] = val.toJSON();
+                    }
+                }
+            }
+
+            return obj;
+        }
+
+        schema.pre("save", function (next) {
+            this._updatedAt = new Date();
+
+            if (!schema.options.versionsDisabled) {
+                var lastVersion = this._versions && this._versions.length ? this._versions[this._versions.length - 1]._version : 0;
+                var newVersion = this.toJSON();
+
+                // for the version we dont want to save anything populated
+                for (var path in schema.paths) {
+                    var pathObj = schema.paths[path];
+
+                    if (pathObj.options.ref) {
+                        var val = this.get(path);
+                        if (val && val instanceof mongoose.Model) {
+                            newVersion = val._id;
+                        }
+                    }
+                }
+
+                delete newVersion._versions;
+                newVersion._version = lastVersion + 1;
+                this._versions.push(newVersion);
+
+                if (this._versions.length > schema.options.versionCount) {
+                    this._versions.shift();
+                }
+            }
+
+            return next();
         });
     }
 
