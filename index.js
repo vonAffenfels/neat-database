@@ -118,8 +118,11 @@ module.exports = class Database extends Module {
         });
     }
 
+    getModel(modelName) {
+        return mongoose.model(modelName);
+    }
+
     registerModel(modelName, schema) {
-        this.log.debug("Loading model " + modelName);
 
         for (let i = 0; i < Application.moduleObjs.length; i++) {
             if (Application.moduleObjs[i].instance.modifySchema) {
@@ -129,6 +132,7 @@ module.exports = class Database extends Module {
 
         try {
             mongoose.model(modelName, schema);
+            this.log.debug("Loaded model " + modelName);
         } catch (e) {
             this.log.error(e);
         }
