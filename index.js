@@ -27,6 +27,7 @@ module.exports = class Database extends Module {
         return new Promise((resolve, reject) => {
             this.log.debug("Initializing...");
             this.connections = {};
+            this.mongoose = mongoose;
             this.loadModels().then(() => {
                 return resolve(this);
             });
@@ -192,7 +193,7 @@ module.exports = class Database extends Module {
             },
 
             _versions: {
-                type: Array,
+                type: mongoose.Schema.Types.Mixed,
                 default: []
             },
 
@@ -218,7 +219,7 @@ module.exports = class Database extends Module {
             delete obj._versions;
 
             // ok this is weird, but mongoose doesnt call transforms on sub documents ... unfortunate when it comes to stuff like user passwords and the _versions key
-            // SOOOOO let's do it ourselfes i guess :(
+            // SOOOOO let's do it ourselves i guess :(
             for (var path in schema.paths) {
                 var pathObj = schema.paths[path];
 
