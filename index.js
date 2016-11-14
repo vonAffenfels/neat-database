@@ -211,9 +211,16 @@ module.exports = class Database extends Module {
             if (schema.options.toJSON._transform) {
                 var obj = schema.options.toJSON._transform(doc);
             } else {
-                obj = doc.toJSON({
-                    transform: false
-                });
+                if (schema.options.toJSON.virtuals) {
+                    obj = doc.toJSON({
+                        virtuals: true,
+                        transform: false
+                    });
+                } else {
+                    obj = doc.toJSON({
+                        transform: false
+                    });
+                }
             }
 
             delete obj._versions;
