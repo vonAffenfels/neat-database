@@ -167,6 +167,8 @@ module.exports = class Database extends Module {
 
 
     modifySchema(modelName, schema) {
+        var self = this;
+
         schema.add({
             _createdAt: {
                 type: Date,
@@ -193,7 +195,7 @@ module.exports = class Database extends Module {
             },
 
             _versions: {
-                type: mongoose.Schema.Types.Mixed,
+                type: [mongoose.Schema.Types.Mixed],
                 default: []
             },
 
@@ -239,14 +241,15 @@ module.exports = class Database extends Module {
             }
 
             return obj;
-        }
+        };
 
         schema.pre("save", function (next) {
             this._updatedAt = new Date();
 
             if (!schema.options.versionsDisabled) {
+                var model = self.getModel(modelName);
                 var lastVersion = this._versions && this._versions.length ? this._versions[this._versions.length - 1]._version : 0;
-                var newVersion = this.toJSON();
+                var newVersion = new model(this.toJSON());
 
                 // for the version we dont want to save anything populated
                 for (var path in schema.paths) {
@@ -255,11 +258,12 @@ module.exports = class Database extends Module {
                     if (pathObj.options.ref) {
                         var val = this.get(path);
                         if (val && val instanceof mongoose.Model) {
-                            newVersion = val._id;
+                            newVersion.set(path, val._id);
                         }
                     }
                 }
 
+                newVersion = newVersion.toJSON();
                 delete newVersion._versions;
                 newVersion._version = lastVersion + 1;
                 this._versions.push(newVersion);
