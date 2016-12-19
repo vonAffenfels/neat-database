@@ -66,6 +66,13 @@ module.exports = class Database extends Module {
                             }
                         };
                     }
+                    else if(config.authSource) {
+                        options = {
+                            auth: {
+                                authSource: config.authSource
+                            }
+                        }
+                    }
 
                     if (key === "default") {
 
