@@ -65,12 +65,22 @@ module.exports = class Database extends Module {
                                 }
                             }
                         };
+
+                        if(config.user){
+                            options["user"] = config.user;
+                            options["pass"] = config.pass;
+                        }
                     }
                     else if(config.authSource) {
                         options = {
                             auth: {
                                 authSource: config.authSource
                             }
+                        };
+
+                        if(config.user){
+                            options["user"] = config.user;
+                            options["pass"] = config.pass;
                         }
                     }
 
