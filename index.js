@@ -66,19 +66,19 @@ module.exports = class Database extends Module {
                             }
                         };
 
-                        if(config.user){
+                        if (config.user) {
                             options["user"] = config.user;
                             options["pass"] = config.pass;
                         }
                     }
-                    else if(config.authSource) {
+                    else if (config.authSource) {
                         options = {
                             auth: {
                                 authSource: config.authSource
                             }
                         };
 
-                        if(config.user){
+                        if (config.user) {
                             options["user"] = config.user;
                             options["pass"] = config.pass;
                         }
@@ -141,6 +141,15 @@ module.exports = class Database extends Module {
     }
 
     registerModel(modelName, schema) {
+
+        try {
+            if (mongoose.model(modelName)) {
+                this.log.error("Model " + modelName + " already exists!!!! (or loaded twice!)");
+                return;
+            }
+        } catch (e) {
+            // we are just checking for duplicates, so if there is an error the model doesnt exist, so its fine, stupid hu ? :D
+        }
 
         for (let i = 0; i < Application.moduleObjs.length; i++) {
             if (Application.moduleObjs[i].instance.modifySchema) {
