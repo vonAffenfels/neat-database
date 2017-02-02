@@ -91,9 +91,9 @@ module.exports = class Database extends Module {
                             this.log.error(err);
                         });
 
+                        apeStatus.mongoose(this.connections[key], "apeStatus");
                         mongoose.connect(config.uri, options).then(() => {
                             this.log.info("Connected to " + key);
-                            apeStatus.mongoose(this.connections[key], "apeStatus");
                             resolve();
                         }, (err) => {
                             // err is a Replset it doesn't make any sense
@@ -101,6 +101,7 @@ module.exports = class Database extends Module {
                             return reject(new Error("Error while connecting to default db"));
                         });
                     } else {
+                        apeStatus.mongoose(this.connections[key], "apeStatus");
                         this.connections[key] = mongoose.createConnection(config.uri, options, (err) => {
                             if (err) {
                                 this.log.error(err);
@@ -108,7 +109,6 @@ module.exports = class Database extends Module {
                             }
 
                             this.log.info("Connected to " + key);
-                            apeStatus.mongoose(this.connections[key], "apeStatus");
                             resolve();
                         });
 
