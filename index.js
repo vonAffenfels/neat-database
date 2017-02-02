@@ -84,22 +84,27 @@ module.exports = class Database extends Module {
                         }
                     }
 
-                    if (key === "default") {
 
+                    if (key === "default") {
                         this.connections[key] = mongoose.connection;
                         this.connections[key].on('error', (err) => {
                             this.log.error(err);
                         });
 
                         apeStatus.mongoose(this.connections[key], "apeStatus");
-                        mongoose.connect(config.uri, options).then(() => {
-                            this.log.info("Connected to " + key);
-                            resolve();
-                        }, (err) => {
-                            // err is a Replset it doesn't make any sense
-                            this.log.error(err);
-                            return reject(new Error("Error while connecting to default db"));
-                        });
+
+                        (function initialConnect() {
+                            mongoose.connect(config.uri, options, (err) => {
+                                if (err) {
+                                    self.log.error(err);
+                                    self.log.info("Retrying in 1 second");
+                                    return setTimeout(initialConnect, 1000);
+                                }
+
+                                self.log.info("Connected to " + key);
+                                resolve();
+                            });
+                        })()
                     } else {
                         apeStatus.mongoose(this.connections[key], "apeStatus");
                         this.connections[key] = mongoose.createConnection(config.uri, options, (err) => {
@@ -109,7 +114,6 @@ module.exports = class Database extends Module {
                             }
 
                             this.log.info("Connected to " + key);
-                            resolve();
                         });
 
                         this.connections[key].on('error', (err) => {
