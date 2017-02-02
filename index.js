@@ -42,6 +42,7 @@ module.exports = class Database extends Module {
                 return new Promise((resolve, reject) => {
                     var config = this.config.connections[key];
                     var options = {};
+                    var self = this;
 
                     if (config.rs_name) {
                         options = {
