@@ -200,9 +200,14 @@ module.exports = class Database extends Module {
     modifySchema(modelName, schema) {
         var self = this;
 
+        if (!schema) {
+            return;
+        }
+
         schema.add({
             _createdAt: {
                 type: Date,
+                permission: false,
                 default: function () {
                     return new Date();
                 }
@@ -210,11 +215,13 @@ module.exports = class Database extends Module {
             _createdBy: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: "user",
+                permission: false,
                 default: null
             },
 
             _updatedAt: {
                 type: Date,
+                permission: false,
                 default: function () {
                     return new Date();
                 }
@@ -222,16 +229,19 @@ module.exports = class Database extends Module {
             _updatedBy: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: "user",
+                permission: false,
                 default: null
             },
 
             _versions: {
                 type: [mongoose.Schema.Types.Mixed],
+                permission: false,
                 default: []
             },
 
             _version: {
                 type: Number,
+                permission: false,
                 default: null
             }
         });
