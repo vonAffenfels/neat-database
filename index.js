@@ -198,7 +198,7 @@ module.exports = class Database extends Module {
 
 
     modifySchema(modelName, schema) {
-        var self = this;
+        let self = this;
 
         if (!schema) {
             return;
@@ -270,11 +270,11 @@ module.exports = class Database extends Module {
 
             // ok this is weird, but mongoose doesnt call transforms on sub documents ... unfortunate when it comes to stuff like user passwords and the _versions key
             // SOOOOO let's do it ourselves i guess :(
-            for (var path in schema.paths) {
-                var pathObj = schema.paths[path];
+            for (let path in schema.paths) {
+                let pathObj = schema.paths[path];
 
                 if (pathObj.options.ref) {
-                    var val = doc.get(path);
+                    let val = doc.get(path);
                     if (val && val instanceof mongoose.Model) {
                         obj[path] = val.toJSON();
                     }
@@ -288,16 +288,16 @@ module.exports = class Database extends Module {
             this._updatedAt = new Date();
 
             if (!schema.options.versionsDisabled) {
-                var model = self.getModel(modelName);
-                var lastVersion = this._versions && this._versions.length ? this._versions[this._versions.length - 1]._version : 0;
-                var newVersion = new model(this.toJSON());
+                let model = self.getModel(modelName);
+                let lastVersion = this._versions && this._versions.length ? this._versions[this._versions.length - 1]._version : 0;
+                let newVersion = new model(this.toJSON());
 
                 // for the version we dont want to save anything populated
-                for (var path in schema.paths) {
-                    var pathObj = schema.paths[path];
+                for (let path in schema.paths) {
+                    let pathObj = schema.paths[path];
 
                     if (pathObj.options.ref) {
-                        var val = this.get(path);
+                        let val = this.get(path);
                         if (val && val instanceof mongoose.Model) {
                             newVersion.set(path, val._id);
                         }
@@ -316,6 +316,94 @@ module.exports = class Database extends Module {
 
             return next();
         });
+
+        schema.methods.getLinked = function () {
+            return new Promise((resolve, reject) => {
+                let checks = [];
+
+                for (let testModelName in mongoose.modelSchemas) {
+                    let testModel = mongoose.model(testModelName);
+                    let possiblePaths = self.getPossibleLinkPathsFromModel(testModel, modelName);
+
+                    if (possiblePaths) {
+                        let query = {
+                            $or: []
+                        };
+
+                        for (let path in possiblePaths) {
+                            let subQuery = {};
+                            subQuery[path] = this._id;
+                            query.$or.push(subQuery);
+                        }
+
+                        checks.push(new Promise((resolve, reject) => {
+                            return testModel.find(query).select({_id: true}).then((docs) => {
+
+                                if (!docs || !docs.length) {
+                                    return resolve(null);
+                                }
+
+                                let ids = docs.map(doc => doc._id);
+                                return resolve({
+                                    model: testModelName,
+                                    data: ids,
+                                });
+                            });
+                        }));
+                    }
+                }
+
+                return Promise.all(checks).then((results) => {
+                    results = results.filter(v => !!v);
+
+
+                    if (results.length === 0) {
+                        return resolve(null);
+                    }
+
+                    let resultMap = {};
+
+                    for (let i = 0; i < results.length; i++) {
+                        let obj = results[i];
+                        resultMap[obj.model] = obj.data;
+                    }
+
+                    return resolve(resultMap)
+                });
+            });
+        }
+    }
+
+    getPossibleLinkPathsFromModel(model, searchedModel) {
+        let paths = {};
+        for (let path in model.schema.paths) {
+            let pathConfig = model.schema.paths[path];
+
+            if (pathConfig.instance === "Array") {
+                // check for simple reference array
+                if (pathConfig.caster.instance === "ObjectID") {
+                    pathConfig = pathConfig.caster; // just set pathConfig to the caster, later check will get it
+                }
+
+                // check for other arrays
+                // @TODO
+            }
+
+            // regular single reference path
+            if (pathConfig.options && pathConfig.options.ref) {
+                if (searchedModel && pathConfig.options.ref !== searchedModel) {
+                    continue;
+                }
+
+                paths[path] = pathConfig.options.ref;
+            }
+        }
+
+        if (Object.keys(paths).length === 0) {
+            return null;
+        }
+
+        return paths;
     }
 
 };
