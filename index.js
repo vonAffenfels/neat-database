@@ -254,9 +254,10 @@ module.exports = class Database extends Module {
             if (schema.options.toJSON._transform) {
                 var obj = schema.options.toJSON._transform(doc);
             } else {
-                if (schema.options.toJSON.virtuals) {
+                if (schema.options.toJSON.virtuals || schema.options.toJSON.getters) {
                     obj = doc.toJSON({
-                        virtuals: true,
+                        getters: schema.options.toJSON.getters,
+                        virtuals: schema.options.toJSON.virtuals,
                         transform: false
                     });
                 } else {
