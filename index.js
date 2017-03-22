@@ -246,6 +246,10 @@ module.exports = class Database extends Module {
             }
         });
 
+        if(!schema.options.toJSON) {
+            schema.options.toJSON = {};
+        }
+
         if (schema.options.toJSON.transform && typeof schema.options.toJSON.transform === "function") {
             schema.options.toJSON._transform = schema.options.toJSON.transform;
         }
