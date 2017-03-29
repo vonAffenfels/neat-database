@@ -303,7 +303,7 @@ module.exports = class Database extends Module {
                     if (val && val instanceof mongoose.Model) {
                         newVersion.set(path, val._id);
                     } else if (val) {
-                        newVersion.set(path);
+                        newVersion.set(path, val);
                     }
                 }
 
