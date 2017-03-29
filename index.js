@@ -246,7 +246,7 @@ module.exports = class Database extends Module {
             }
         });
 
-        if(!schema.options.toJSON) {
+        if (!schema.options.toJSON) {
             schema.options.toJSON = {};
         }
 
@@ -295,21 +295,23 @@ module.exports = class Database extends Module {
             if (!schema.options.versionsDisabled) {
                 let model = self.getModel(modelName);
                 let lastVersion = this._versions && this._versions.length ? this._versions[this._versions.length - 1]._version : 0;
-                let newVersion = new model(this.toJSON());
+                let newVersion = new model();
 
                 // for the version we dont want to save anything populated
                 for (let path in schema.paths) {
-                    let pathObj = schema.paths[path];
-
-                    if (pathObj.options.ref) {
-                        let val = this.get(path);
-                        if (val && val instanceof mongoose.Model) {
-                            newVersion.set(path, val._id);
-                        }
+                    let val = this.get(path);
+                    if (val && val instanceof mongoose.Model) {
+                        newVersion.set(path, val._id);
+                    } else if (val) {
+                        newVersion.set(path);
                     }
                 }
 
-                newVersion = newVersion.toJSON();
+                newVersion = newVersion.toJSON({
+                    virtuals: false,
+                    getters: false,
+                    transform: false
+                });
                 delete newVersion._versions;
                 newVersion._version = lastVersion + 1;
                 this._versions.push(newVersion);
