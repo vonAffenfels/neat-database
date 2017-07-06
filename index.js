@@ -316,7 +316,9 @@ module.exports = class Database extends Module {
                 newVersion._version = lastVersion + 1;
                 this._versions.push(newVersion);
 
-                if (this._versions.length > schema.options.versionCount) {
+                let maxVersionCount = schema.options.versionCount || 100;
+
+                while (this._versions.length > maxVersionCount) {
                     this._versions.shift();
                 }
             }
