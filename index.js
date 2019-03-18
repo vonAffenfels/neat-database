@@ -55,14 +55,14 @@ module.exports = class Database extends Module {
                                 reconnectInterval: 5000,
                                 socketOptions: {
                                     keepAlive: 1,
-                                    connectTimeoutMS: 30000
+                                    connectTimeoutMS: 600
                                 }
                             },
                             replset: {
                                 rs_name: config.rs_name,
                                 socketOptions: {
                                     keepAlive: 1,
-                                    connectTimeoutMS: 30000
+                                    connectTimeoutMS: 600
                                 }
                             }
                         };
