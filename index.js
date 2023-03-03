@@ -16,11 +16,11 @@ module.exports = class Database extends Module {
         return {
             connections: {
                 default: {
-                    uri: "mongodb://127.0.0.1:27017/neat"
-                }
+                    uri: "mongodb://127.0.0.1:27017/neat",
+                },
             },
-            modelRoot: "models"
-        }
+            modelRoot: "models",
+        };
     }
 
     init() {
@@ -41,50 +41,31 @@ module.exports = class Database extends Module {
             Promise.each(Object.keys(this.config.connections), (key) => {
                 return new Promise((resolve, reject) => {
                     var config = this.config.connections[key];
-                    var options = {};
+                    var options = {
+                        useUnifiedTopology: true,
+                        useNewUrlParser: true,
+                        auth: {authSource: 'admin'},
+                        poolSize: process.env.MONGODB_CONNECTION_LIMIT || 10,
+                        keepAlive: 1,
+                        retryReads: false,
+                        retryWrites: true,
+                        connectTimeoutMS: 10000,
+                        serverSelectionTimeoutMS: 10000,
+                    };
                     var self = this;
 
                     if (config.rs_name) {
-                        options = {
-                            auth: {
-                                authSource: config.authSource || "admin"
-                            },
-                            server: {
-                                poolSize: config.poolSize,
-                                reconnectTries: 60 * 60 * 24,
-                                reconnectInterval: 5000,
-                                socketOptions: {
-                                    keepAlive: 1,
-                                    connectTimeoutMS: 600
-                                }
-                            },
-                            replset: {
-                                rs_name: config.rs_name,
-                                socketOptions: {
-                                    keepAlive: 1,
-                                    connectTimeoutMS: 600
-                                }
-                            }
-                        };
-
-                        if (config.user) {
-                            options["user"] = config.user;
-                            options["pass"] = config.pass;
-                        }
-                    }
-                    else if (config.authSource) {
-                        options = {
-                            auth: {
-                                authSource: config.authSource
-                            }
-                        };
-
-                        if (config.user) {
-                            options["user"] = config.user;
-                            options["pass"] = config.pass;
-                        }
+                        options.replicaSet = config.rs_name;
                     }
 
+                    if (config.user && config.pass) {
+                        options.user = config.user;
+                        options.pass = config.pass;
+                    }
+
+                    if (config.authSource) {
+                        options.auth.authSource = config.authSource;
+                    }
 
                     if (key === "default") {
                         this.connections[key] = mongoose.connection;
@@ -105,7 +86,7 @@ module.exports = class Database extends Module {
                                 self.log.info("Connected to " + key);
                                 resolve();
                             });
-                        })()
+                        })();
                     } else {
                         apeStatus.mongoose(this.connections[key], "apeStatus");
                         this.connections[key] = mongoose.createConnection(config.uri, options, (err) => {
@@ -191,7 +172,7 @@ module.exports = class Database extends Module {
                     var modelName = file.replace(".js", "");
                     this.registerModel(modelName, require(rootDir + "/" + file));
                     return Promise.resolve();
-                })
+                });
             }, reject).then(resolve, reject);
         });
     }
@@ -210,13 +191,13 @@ module.exports = class Database extends Module {
                 permission: false,
                 default: function () {
                     return new Date();
-                }
+                },
             },
             _createdBy: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: "user",
                 permission: false,
-                default: null
+                default: null,
             },
 
             _updatedAt: {
@@ -224,26 +205,26 @@ module.exports = class Database extends Module {
                 permission: false,
                 default: function () {
                     return new Date();
-                }
+                },
             },
             _updatedBy: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: "user",
                 permission: false,
-                default: null
+                default: null,
             },
 
             _versions: {
                 type: [mongoose.Schema.Types.Mixed],
                 permission: false,
-                default: []
+                default: [],
             },
 
             _version: {
                 type: Number,
                 permission: false,
-                default: null
-            }
+                default: null,
+            },
         });
 
         if (!schema.options.toJSON) {
@@ -262,11 +243,11 @@ module.exports = class Database extends Module {
                     obj = doc.toJSON({
                         getters: schema.options.toJSON.getters,
                         virtuals: schema.options.toJSON.virtuals,
-                        transform: false
+                        transform: false,
                     });
                 } else {
                     obj = doc.toJSON({
-                        transform: false
+                        transform: false,
                     });
                 }
             }
@@ -310,7 +291,7 @@ module.exports = class Database extends Module {
                 newVersion = newVersion.toJSON({
                     virtuals: false,
                     getters: false,
-                    transform: false
+                    transform: false,
                 });
                 delete newVersion._versions;
                 newVersion._version = lastVersion + 1;
@@ -336,7 +317,7 @@ module.exports = class Database extends Module {
 
                     if (possiblePaths) {
                         let query = {
-                            $or: []
+                            $or: [],
                         };
 
                         for (let path in possiblePaths) {
@@ -377,10 +358,10 @@ module.exports = class Database extends Module {
                         resultMap[obj.model] = obj.data;
                     }
 
-                    return resolve(resultMap)
+                    return resolve(resultMap);
                 });
             });
-        }
+        };
     }
 
     getPossibleLinkPathsFromModel(model, searchedModel) {
