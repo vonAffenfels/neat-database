@@ -63,7 +63,7 @@ module.exports = class Database extends Module {
                         options.pass = config.pass;
                     }
 
-                    if (config.authSource) {
+                    if (config.hasOwnProperty("authSource")) {
                         options.auth.authSource = config.authSource;
                     }
 
