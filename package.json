@@ -1,6 +1,6 @@
 {
   "name": "neat-database",
-  "version": "1.0.26",
+  "version": "1.0.27",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Nexum/neat-database.git"
+    "url": "git+https://github.com/vonAffenfels/neat-database.git"
   },
   "author": "Dominik Kienzler <d.kienzler@dominik-kienzler.de>",
   "license": "ISC",
