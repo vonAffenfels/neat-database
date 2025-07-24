@@ -57,6 +57,9 @@ module.exports = class Database extends Module {
                     if (config.hasOwnProperty("sslValidate")) {
                         options.sslValidate = config.sslValidate;
                     }
+                    if (config.hasOwnProperty("ssl")) {
+                        options.ssl = config.ssl;
+                    }
                     if (config.hasOwnProperty("sslCA")) {
                         // Falls sslCA ein Pfad ist, lade die Datei
                         if (typeof config.sslCA === "string" && fs.existsSync(config.sslCA)) {
