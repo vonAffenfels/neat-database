@@ -52,6 +52,20 @@ module.exports = class Database extends Module {
                         connectTimeoutMS: 10000,
                         serverSelectionTimeoutMS: 10000,
                     };
+
+                    // SSL Optionen aus der Config übernehmen
+                    if (config.hasOwnProperty("sslValidate")) {
+                        options.sslValidate = config.sslValidate;
+                    }
+                    if (config.hasOwnProperty("sslCA")) {
+                        // Falls sslCA ein Pfad ist, lade die Datei
+                        if (typeof config.sslCA === "string" && fs.existsSync(config.sslCA)) {
+                            options.sslCA = fs.readFileSync(config.sslCA);
+                        } else {
+                            options.sslCA = config.sslCA;
+                        }
+                    }
+
                     var self = this;
 
                     if (config.rs_name) {
